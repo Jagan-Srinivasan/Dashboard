@@ -2714,14 +2714,34 @@ def sensor_data():
 # Simple POST route to receive data from ESP8266
 @app.route('/simple-update', methods=['POST'])
 def simple_update():
-    data = request.get_json()  # Parse JSON data sent by ESP8266
-    print("Simple endpoint - Received data:", data)  # Print the data to your Flask (Replit) console/log
+    global fire_detected, temperature, smoke, co, lpg, gasValue, pressure, aqi, last_data_received
 
-    # You can add any processing here if needed
+    data = request.get_json()
+    print("Simple endpoint - Received data:", data)
 
-    return {"status": "success"}, 200  # Send back a success response
+    # Update in-memory variables
+    fire_detected = data.get("fire", False)
+    temperature = data.get("temperature", 0.0)
+    smoke = data.get("smoke", 0.0)
+    co = data.get("co", 0.0)
+    lpg = data.get("lpg", 0.0)
+    gasValue = data.get("gasValue", 0)
+    pressure = data.get("pressure", 0.0)
+    aqi = data.get("aqi", 0)
+    last_data_received = datetime.now()
 
-# New endpoint for fire status predictions
+    # Optional: save to database
+    conn = sqlite3.connect('sensor_data.db')
+    c = conn.cursor()
+    c.execute('''INSERT INTO sensor_readings 
+                 (fire, temperature, smoke, co, lpg, gas_value, pressure, aqi) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+              (fire_detected, temperature, smoke, co, lpg, gasValue, pressure, aqi))
+    conn.commit()
+    conn.close()
+
+    return {"status": "success"}, 200
+
 @app.route('/fire-status', methods=['GET'])
 def fire_status():
     global fire_detected, temperature, smoke, co, lpg, gasValue, last_data_received
