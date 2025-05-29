@@ -3,6 +3,13 @@ from flask import Flask, request, render_template_string, jsonify
 import time
 import sqlite3
 from datetime import datetime, timedelta
+import pickle
+import pandas as pd
+
+# Load model once when app starts
+with open('fire_model.pkl', 'rb') as f:
+    model = pickle.load(f)
+
 
 
 # Try to load the ML model with error handling
@@ -1965,31 +1972,43 @@ def update():
     if request.method == 'POST':
         data = request.get_json()
         if data:
-            print("Received sensor data:", data)  # Print received data to console
-            fire_detected = data.get("fire", data.get("lampIndicator", False))  # Use lampIndicator as fire if fire not present
-            temperature = data.get("temp", data.get("temperature", 0.0))  # Accept both temp and temperature
+            print("Received sensor data:", data)
+
+            # Extract features
+            temperature = data.get("temp", data.get("temperature", 0.0))
             smoke = data.get("smoke", 0.0)
             co = data.get("co", 0.0)
             lpg = data.get("lpg", 0.0)
             gasValue = data.get("gasValue", 0)
             pressure = data.get("pressure", 0.0)
             aqi = data.get("aqi", 0)
+            lampIndicator = data.get("lampIndicator", 0)
+
             last_data_received = datetime.now()
+
+            # Create input for model
+            input_data = pd.DataFrame([[gasValue, co, smoke, lpg, temperature, pressure, aqi, lampIndicator]],
+                                      columns=['gasValue', 'co', 'smoke', 'lpg', 'temperature', 'pressure', 'aqi', 'lampIndicator'])
+
+            # Predict fire
+            prediction = model.predict(input_data)
+            fire_detected = int(prediction[0])  # Ensure it's JSON serializable
 
             # Store in database
             conn = sqlite3.connect('sensor_data.db')
             c = conn.cursor()
-            c.execute('''INSERT INTO sensor_readings                  (fire, temperature, smoke, co, lpg, gas_value, pressure, aqi)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                     (fire_detected, temperature, smoke, co, lpg, gasValue, pressure, aqi))
+            c.execute('''INSERT INTO sensor_readings 
+                         (fire, temperature, smoke, co, lpg, gas_value, pressure, aqi)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                      (fire_detected, temperature, smoke, co, lpg, gasValue, pressure, aqi))
             conn.commit()
             conn.close()
 
-            return {"status": "success"}, 200
+            return {"status": "success", "predicted_fire": fire_detected}, 200
         else:
             return {"status": "failed", "message": "No JSON data received"}, 400
-    else: # GET Request
-        # Get current and historical data
+
+    else:  # GET Request
         conn = sqlite3.connect('sensor_data.db')
         c = conn.cursor()
 
@@ -1997,11 +2016,10 @@ def update():
         c.execute('''SELECT * FROM sensor_readings ORDER BY timestamp DESC LIMIT 1''')
         latest = c.fetchone()
 
-        # Get historical data (last 2 months)
+        # Get last 2 months of data
         two_months_ago = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d %H:%M:%S')
         c.execute('''SELECT * FROM sensor_readings WHERE timestamp > ? ORDER BY timestamp''', (two_months_ago,))
         history = c.fetchall()
-
         conn.close()
 
         if latest:
@@ -2037,6 +2055,7 @@ def update():
         }
 
         return {"current": current_data, "historical": historical_data}
+
 
 @app.route("/status")
 def status():
