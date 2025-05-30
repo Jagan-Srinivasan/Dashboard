@@ -3,12 +3,10 @@ from flask import Flask, request, render_template_string, jsonify
 import time
 import sqlite3
 from datetime import datetime, timedelta
-import pickle
+
 import pandas as pd
 
-# Load model once when app starts
-with open('fire_model.pkl', 'rb') as f:
-    model = pickle.load(f)
+
 
 
 
