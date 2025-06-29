@@ -50,6 +50,8 @@ gasValue = 0
 pressure = 0.0
 aqi = 0
 last_data_received = None
+external_fire_alert = False
+external_fire_alert_time = None
 
 html_template = """
 <!DOCTYPE html>
@@ -991,6 +993,15 @@ html_template = """
             </div>
         </div>
     </nav>
+    {% if external_fire_alert %}
+  <div class="alert alert-danger" style="font-size:2rem;margin-bottom:1rem;padding:1rem;background:#d63031;color:white;border-radius:1rem;text-align:center;">
+    🔥 FIRE DETECTED BY AI!
+  </div>
+{% else %}
+  <div class="alert alert-success" style="font-size:2rem;margin-bottom:1rem;padding:1rem;background:#00b894;color:white;border-radius:1rem;text-align:center;">
+    ✅ SAFE (AI)
+  </div>
+{% endif %}
 
     <div class="container">
         <div class="grid">
@@ -1956,6 +1967,7 @@ html_template = """
 def index():
     return render_template_string(html_template,
                           fire=fire_detected,
+                          external_fire_alert=is_external_alert_active(),
                           temperature=temperature,
                           smoke=smoke,
                           co=co,
@@ -2054,14 +2066,17 @@ def update():
         }
 
         return {"current": current_data, "historical": historical_data}
-       @app.route('/external-fire-alert', methods=['POST'])
-def external_fire_alert():
-    global fire_detected, last_data_received
-    fire_detected = True
-    last_data_received = datetime.now()
+      @app.route('/external-fire-alert', methods=['POST'])
+def external_fire_alert_route():
+    global external_fire_alert, external_fire_alert_time
+    external_fire_alert = True
+    external_fire_alert_time = datetime.now()
     print("🔥 External fire alert received!")
     return jsonify({"status": "success", "message": "Fire alert set via external AI detection."})
-
+def is_external_alert_active():
+    if external_fire_alert and external_fire_alert_time:
+        return (datetime.now() - external_fire_alert_time).total_seconds() < 120  # expires after 2min
+    return False
 
 
 @app.route("/status")
