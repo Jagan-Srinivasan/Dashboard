@@ -1965,6 +1965,7 @@ def index():
                           aqi=aqi)
 
 @app.route("/update", methods=["POST", "GET"])
+
 def update():
     global fire_detected, temperature, smoke, co, lpg, gasValue, pressure, aqi, last_data_received
     if request.method == 'POST':
@@ -2053,12 +2054,13 @@ def update():
         }
 
         return {"current": current_data, "historical": historical_data}
-        @app.route('/external-fire-alert', methods=['POST'])
+       @app.route('/external-fire-alert', methods=['POST'])
 def external_fire_alert():
-    global fire_detected
-    fire_detected = True  # Trigger fire alert manually
+    global fire_detected, last_data_received
+    fire_detected = True
+    last_data_received = datetime.now()
     print("🔥 External fire alert received!")
-    return {"status": "fire alert received"}, 200
+    return jsonify({"status": "success", "message": "Fire alert set via external AI detection."})
 
 
 
