@@ -1002,10 +1002,7 @@ html_template = """
     ✅ SAFE (AI)
   </div>
 {% endif %}
-<div style="margin-top: 20px; text-align: center;">
-  <h2>📷 Live Fire Camera Feed</h2>
-  <img src="http://192.168.31.99:8080/video" width="70%" style="border: 4px solid black; border-radius: 10px;" alt="IP Camera Stream">
-</div>
+
 
     <div class="container">
         <div class="grid">
