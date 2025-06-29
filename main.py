@@ -2066,17 +2066,19 @@ def update():
         }
 
         return {"current": current_data, "historical": historical_data}
-      @app.route('/external-fire-alert', methods=['POST'])
+@app.route('/external-fire-alert', methods=['POST'])
 def external_fire_alert_route():
     global external_fire_alert, external_fire_alert_time
     external_fire_alert = True
     external_fire_alert_time = datetime.now()
     print("🔥 External fire alert received!")
     return jsonify({"status": "success", "message": "Fire alert set via external AI detection."})
+
+# ✅ Function to check if external alert is active
 def is_external_alert_active():
     if external_fire_alert and external_fire_alert_time:
-        return (datetime.now() - external_fire_alert_time).total_seconds() < 120  # expires after 2min
-    return False
+        return (datetime.now() - external_fire_alert_time).total_seconds() < 120  # 2 mins
+    return False     
 
 
 @app.route("/status")
