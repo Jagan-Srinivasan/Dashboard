@@ -2053,6 +2053,13 @@ def update():
         }
 
         return {"current": current_data, "historical": historical_data}
+        @app.route('/external-fire-alert', methods=['POST'])
+def external_fire_alert():
+    global fire_detected
+    fire_detected = True  # Trigger fire alert manually
+    print("🔥 External fire alert received!")
+    return {"status": "fire alert received"}, 200
+
 
 
 @app.route("/status")
