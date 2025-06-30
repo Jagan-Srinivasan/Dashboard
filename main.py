@@ -993,15 +993,13 @@ html_template = """
             </div>
         </div>
     </nav>
-    {% if external_fire_alert %}
-  <div class="alert alert-danger" style="font-size:2rem;margin-bottom:1rem;padding:1rem;background:#d63031;color:white;border-radius:1rem;text-align:center;">
-    🔥 FIRE DETECTED BY AI!
-  </div>
+   <div id="fire-alert-container">
+{% if external_fire_alert %}
+  <div class="alert alert-danger" ...>🔥 FIRE DETECTED BY AI!</div>
 {% else %}
-  <div class="alert alert-success" style="font-size:2rem;margin-bottom:1rem;padding:1rem;background:#00b894;color:white;border-radius:1rem;text-align:center;">
-    ✅ SAFE (AI)
-  </div>
+  <div class="alert alert-success" ...>✅ SAFE (AI)</div>
 {% endif %}
+</div>
 
 
     <div class="container">
@@ -1960,8 +1958,45 @@ html_template = """
         }
 
         </script>
+                function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        </script>
 </body>
 </html>
+<script>
+function updateFireAlert() {
+  fetch("/fire-status")
+    .then(res => res.json())
+    .then(data => {
+      const container = document.getElementById("fire-alert-container");
+      if (data.external_fire_alert) {
+        container.innerHTML = `
+          <div class="alert alert-danger" style="font-size:2rem;margin-bottom:1rem;padding:1rem;background:#d63031;color:white;border-radius:1rem;text-align:center;">
+            🔥 FIRE DETECTED BY AI!
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="alert alert-success" style="font-size:2rem;margin-bottom:1rem;padding:1rem;background:#00b894;color:white;border-radius:1rem;text-align:center;">
+            ✅ SAFE (AI)
+          </div>
+        `;
+      }
+    });
+}
+
+// Run every 3 seconds
+setInterval(updateFireAlert, 3000);
+</script>
+
+"""
+</body>
+</html>
+
 """
 
 @app.route("/")
@@ -2090,6 +2125,11 @@ def status():
         is_online = time_diff < 300  # Consider offline if no data for 5 minutes (300 seconds)
         return {"status": "ONLINE" if is_online else "OFFLINE", "last_update": last_data_received.isoformat()}
     return {"status": "OFFLINE", "last_update": None}
+@app.route('/fire-status')
+def fire_status():
+    return jsonify({
+        "external_fire_alert": is_external_alert_active()
+    })
 
 @app.route("/about")
 def about():
