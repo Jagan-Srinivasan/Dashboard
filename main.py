@@ -2124,7 +2124,7 @@ def status():
         return {"status": "ONLINE" if is_online else "OFFLINE", "last_update": last_data_received.isoformat()}
     return {"status": "OFFLINE", "last_update": None}
 @app.route('/fire-status')
-def fire_status():
+def fire_status_2():
     return jsonify({
         "external_fire_alert": is_external_alert_active()
     })
