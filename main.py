@@ -1992,8 +1992,6 @@ function updateFireAlert() {
 // Run every 3 seconds
 setInterval(updateFireAlert, 3000);
 </script>
-
-"""
 </body>
 </html>
 
@@ -2592,7 +2590,7 @@ def ai_dashboard():
     </script>
 </body>
 </html>
-    """
+"""
     return render_template_string(ai_dashboard_template)
 
 @app.route("/features")
